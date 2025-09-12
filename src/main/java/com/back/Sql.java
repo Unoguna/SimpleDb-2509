@@ -95,7 +95,33 @@ public class Sql {
     }
 
     public List<Map<String, Object>> selectRows() {
-        return null;
+        List<Map<String, Object>> rows = new ArrayList<>();
+
+        try {
+            Connection conn = simpleDb.getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(getSql())) {
+                bindParams(ps);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    ResultSetMetaData meta = rs.getMetaData();
+                    int columnCount = meta.getColumnCount();
+
+                    while (rs.next()) {
+                        Map<String, Object> row = new LinkedHashMap<>();
+                        for (int i = 1; i <= columnCount; i++) {
+                            String columnName = meta.getColumnLabel(i);
+                            Object value = rs.getObject(i);
+                            row.put(columnName, value);
+                        }
+                        rows.add(row);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return rows;
     }
 
     public List<Article> selectRows(Class<Article> articleClass){
@@ -133,9 +159,34 @@ public class Sql {
     }
 
     public LocalDateTime selectDatetime() {
-        return null;
-    }
+        try {
+            Connection conn = simpleDb.getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(getSql())) {
+                bindParams(ps);
 
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        Timestamp ts = rs.getTimestamp(1);
+                        if (ts != null) {
+                            return ts.toLocalDateTime();
+                        }
+
+                        /*
+                        * NOTE:
+                        * - 아래의 코드처럼 getObject(..., LocalDateTime.class)를 쓰면 Timestamp 없이 바로 LocalDateTime을 얻을 수 있음
+                        * - 그러나 구버전 JDBC 드라이버는 이를 지원하지 않을 수 있음
+                        * - 또한 Timestamp는 DATE/TIME/DATETIME/TIMESTAMP 모두 커버 가능
+                        * => 호환성과 안정성을 위해 Timestamp를 거쳐 변환하는 방식을 사용
+                        */
+                        // return rs.getObject(1, LocalDateTime.class);
+                    }
+                    throw new IllegalStateException("쿼리 결과가 없습니다: " + getSql());
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public Long selectLong() {
         return 0L;
     }

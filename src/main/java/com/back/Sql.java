@@ -23,6 +23,14 @@ public class Sql {
         return this;
     }
 
+    public Sql appendIn(String sqlPart, Object... paramValues) {
+        if (!sb.isEmpty()) sb.append(" ");
+        sb.append(sqlPart);
+        params.addAll(Arrays.asList(paramValues));
+        return this;
+    }
+
+
     // IN절 지원: appendIn("id IN", List.of(1,2,3))
     public Sql appendIn(String prefix, List<?> inParams) {
         if (inParams == null || inParams.isEmpty()) {
@@ -242,23 +250,18 @@ public class Sql {
                         if (value instanceof Boolean bool) {
                             return bool;
                         }
+                        if (value instanceof Number num) {
+                            return num.intValue() != 0; // 1 → true, 0 → false
+                        }
+                        if (value instanceof String s) {
+                            return s.equals("1") || s.equalsIgnoreCase("true");
+                        }
                     }
                 }
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return null;
-    }
-
-    public Sql append(String s, int i, int i1) {
-        return null;
-    }
-
-    public void appendIn(String s, int i, int i1, int i2) {
-    }
-
-    public Sql appendIn(String s, Long[] ids) {
         return null;
     }
 

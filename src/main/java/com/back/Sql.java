@@ -210,10 +210,44 @@ public class Sql {
     }
 
     public String selectString() {
-        return "";
+        try {
+            Connection conn = simpleDb.getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(getSql())) {
+                bindParams(ps);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        Object value = rs.getObject(1);
+                        if (value == null) return null;
+                        if (value instanceof String str) {
+                            return str;
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
     }
 
     public Boolean selectBoolean() {
+        try {
+            Connection conn = simpleDb.getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(getSql())) {
+                bindParams(ps);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        Object value = rs.getObject(1);
+                        if (value == null) return null;
+                        if (value instanceof Boolean bool) {
+                            return bool;
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         return null;
     }
 

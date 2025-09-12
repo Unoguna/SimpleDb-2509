@@ -22,29 +22,22 @@ public class SimpleDb {
     private ThreadLocal<Connection> connectionHolder = new ThreadLocal<>();
 
     public SimpleDb(String host, String username, String password, String dbName) {
+
+        //굳이 없어도 자동으로 드라이버를 로드하지만 호환성, 명시성 때문에 넣어주는게 좋다.
         try {
             Class.forName("com.mysql.cj.jdbc.Driver"); // MySQL 드라이버 로드
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("MySQL Driver not found", e);
         }
+
         this.host = host;
         this.username = username;
         this.password = password;
         this.dbName = dbName;
 
-        // ✅ DB 및 기본 테이블 보장
+        // DB 및 기본 테이블 보장
         ensureDatabaseExists();
         ensureArticleTableExists();
-    }
-
-//    public SimpleDb(String localhost, String id, String password, String name) {
-//    }
-
-
-    public void run(String sql) {
-    }
-
-    public void run(String sql, String title, String body, boolean isBlind) {
     }
 
     private String buildUrlWithoutDb() {
@@ -88,6 +81,12 @@ public class SimpleDb {
         }
     }
 
+
+    /*
+        스레드 A가 getConnection()을 부르면 A 전용 Connection이 생김
+        스레드 B가 호출하면 B 전용 Connection이 따로 생김
+        A, B 스레드는 서로의 커넥션을 건드리지 않음
+     */
     public Connection getConnection() throws SQLException {
         Connection conn = connectionHolder.get();
         if (conn == null || conn.isClosed()) {
@@ -101,6 +100,13 @@ public class SimpleDb {
     public Sql genSql() {
         return new Sql(this);
     }
+
+    public void run(String sql) {
+    }
+
+    public void run(String sql, String title, String body, boolean isBlind) {
+    }
+
     public void startTransaction() {
     }
 

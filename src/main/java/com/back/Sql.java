@@ -1,14 +1,18 @@
 package com.back;
 
+import lombok.Getter;
+
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 public class Sql {
     private final SimpleDb simpleDb;
     private final StringBuilder sb = new StringBuilder();
+    @Getter
     private final List<Object> params = new ArrayList<>();
 
     public Sql(SimpleDb simpleDb) {
@@ -17,16 +21,15 @@ public class Sql {
 
     // 단순 문자열 추가
     public Sql append(String sqlPart) {
-        if (sb.length() > 0) sb.append(" ");
+        if (!sb.isEmpty()) sb.append(" ");
         sb.append(sqlPart);
         return this;
     }
 
-    // 파라미터 포함된 문자열 추가
-    public Sql append(String sqlPart, Object param) {
-        if (sb.length() > 0) sb.append(" ");
+    public Sql append(String sqlPart, Object... paramValues) {
+        if (!sb.isEmpty()) sb.append(" ");
         sb.append(sqlPart);
-        params.add(param);
+        params.addAll(Arrays.asList(paramValues));
         return this;
     }
 
@@ -50,15 +53,13 @@ public class Sql {
         return sb.toString();
     }
 
-    public List<Object> getParams() {
-        return params;
-    }
-
 
     // INSERT 실행 → 생성된 PK 반환
     public long insert() {
         try {
             Connection conn = simpleDb.getConnection();
+
+            //RETURN_GENERATED_KEYS 옵션을 주면, INSERT 실행 후 DB가 생성한 AUTO_INCREMENT 값을 JDBC가 꺼낼 수 있게 된다.
             try (PreparedStatement ps = conn.prepareStatement(getSql(), Statement.RETURN_GENERATED_KEYS)) {
                 bindParams(ps);
                 ps.executeUpdate();
@@ -141,12 +142,6 @@ public class Sql {
 
     public Long selectLong() {
         return 0L;
-    }
-
-    public void append(String s, int i, int i1, int i2) {
-    }
-
-    public void append(String s, int i, int i1, int i2, int i3) {
     }
 
     public String selectString() {

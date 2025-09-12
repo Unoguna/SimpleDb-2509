@@ -19,13 +19,6 @@ public class Sql {
         this.simpleDb = simpleDb;
     }
 
-    // 단순 문자열 추가
-    public Sql append(String sqlPart) {
-        if (!sb.isEmpty()) sb.append(" ");
-        sb.append(sqlPart);
-        return this;
-    }
-
     public Sql append(String sqlPart, Object... paramValues) {
         if (!sb.isEmpty()) sb.append(" ");
         sb.append(sqlPart);
@@ -113,9 +106,16 @@ public class Sql {
     }
 
     public int update() {
-        return 0;
+        try {
+            Connection conn = simpleDb.getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(getSql())) {
+                bindParams(ps);
+                return ps.executeUpdate(); // 영향을 받은 행 수 반환
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
-
     public int delete() {
         return 0;
     }

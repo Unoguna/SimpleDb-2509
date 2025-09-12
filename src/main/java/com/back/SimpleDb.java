@@ -3,10 +3,7 @@ package com.back;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 @RequiredArgsConstructor
 @Setter
@@ -34,17 +31,6 @@ public class SimpleDb {
         this.username = username;
         this.password = password;
         this.dbName = dbName;
-
-        // DB 및 기본 테이블 보장
-        ensureDatabaseExists();
-        ensureArticleTableExists();
-    }
-
-    private String buildUrlWithoutDb() {
-        return String.format(
-                "jdbc:mysql://%s:3306/?serverTimezone=Asia/Seoul&characterEncoding=UTF-8",
-                host
-        );
     }
 
     private String buildUrlWithDb() {
@@ -53,34 +39,6 @@ public class SimpleDb {
                 host, dbName
         );
     }
-
-    private void ensureDatabaseExists() {
-        try (Connection conn = DriverManager.getConnection(buildUrlWithoutDb(), username, password);
-             Statement stmt = conn.createStatement()) {
-            stmt.executeUpdate("CREATE DATABASE IF NOT EXISTS " + dbName +
-                    " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to ensure database exists: " + dbName, e);
-        }
-    }
-
-    private void ensureArticleTableExists() {
-        try (Connection conn = DriverManager.getConnection(buildUrlWithDb(), username, password);
-             Statement stmt = conn.createStatement()) {
-            stmt.executeUpdate("""
-                CREATE TABLE IF NOT EXISTS article (
-                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                    createdDate DATETIME NOT NULL,
-                    modifiedDate DATETIME NOT NULL,
-                    title VARCHAR(255) NOT NULL,
-                    body TEXT NOT NULL
-                )
-                """);
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to ensure article table exists", e);
-        }
-    }
-
 
     /*
         스레드 A가 getConnection()을 부르면 A 전용 Connection이 생김
@@ -101,10 +59,19 @@ public class SimpleDb {
         return new Sql(this);
     }
 
-    public void run(String sql) {
-    }
+    public void run(String sql, Object... params) {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-    public void run(String sql, String title, String body, boolean isBlind) {
+            // ? 자리에 순서대로 값 바인딩
+            for (int i = 0; i < params.length; i++) {
+                ps.setObject(i + 1, params[i]);
+            }
+
+            ps.executeUpdate(); // INSERT / UPDATE / DELETE / TRUNCATE 다 가능
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void startTransaction() {

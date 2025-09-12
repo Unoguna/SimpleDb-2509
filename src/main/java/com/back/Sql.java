@@ -24,8 +24,17 @@ public class Sql {
     }
 
     public Sql appendIn(String sqlPart, Object... paramValues) {
+        if (paramValues == null || paramValues.length == 0) {
+            // 값이 없으면 WHERE id IN (NULL) 같은 안전한 쿼리로 만듦
+            if (!sb.isEmpty()) sb.append(" ");
+            sb.append(sqlPart.replace("?", "NULL"));
+            return this;
+        }
+
+        //?를
         if (!sb.isEmpty()) sb.append(" ");
-        sb.append(sqlPart);
+        sb.append(sqlPart.replace("?",
+                String.join(", ", Collections.nCopies(paramValues.length, "?"))));
         params.addAll(Arrays.asList(paramValues));
         return this;
     }

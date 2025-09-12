@@ -4,10 +4,7 @@ import lombok.Getter;
 
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Sql {
     private final SimpleDb simpleDb;
@@ -66,38 +63,6 @@ public class Sql {
         return -1;
     }
 
-    // UPDATE/DELETE 실행 → 영향받은 행 수 반환
-    public int updateOrDelete() {
-        try {
-            Connection conn = simpleDb.getConnection();
-            try (PreparedStatement ps = conn.prepareStatement(getSql())) {
-                bindParams(ps);
-                return ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // 단일 값 조회
-    public <T> T selectOne(Class<T> type) {
-        try {
-            Connection conn = simpleDb.getConnection();
-            try (PreparedStatement ps = conn.prepareStatement(getSql())) {
-                bindParams(ps);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        Object value = rs.getObject(1);
-                        return type.cast(value);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return null;
-    }
-
     // 파라미터 바인딩
     private void bindParams(PreparedStatement ps) throws SQLException {
         for (int i = 0; i < params.size(); i++) {
@@ -116,12 +81,21 @@ public class Sql {
             throw new RuntimeException(e);
         }
     }
+
     public int delete() {
-        return 0;
+        try {
+            Connection conn = simpleDb.getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(getSql())) {
+                bindParams(ps);
+                return ps.executeUpdate(); // 영향을 받은 행 수 반환
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public List<Map<String, Object>> selectRows() {
-        return List.of();
+        return null;
     }
 
     public List<Article> selectRows(Class<Article> articleClass){
@@ -129,7 +103,29 @@ public class Sql {
     }
 
     public Map<String, Object> selectRow() {
-        return Map.of();
+        try {
+            Connection conn = simpleDb.getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(getSql())) {
+                bindParams(ps);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) return null; // 결과가 없으면 null
+
+                    ResultSetMetaData meta = rs.getMetaData();
+                    int columnCount = meta.getColumnCount();
+
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    for (int i = 1; i <= columnCount; i++) {
+                        String columnName = meta.getColumnLabel(i); // 컬럼명
+                        Object value = rs.getObject(i);            // 값
+                        row.put(columnName, value);
+                    }
+                    return row;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Article selectRow(Class<Article> articleClass){

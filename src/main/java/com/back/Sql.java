@@ -31,7 +31,7 @@ public class Sql {
             return this;
         }
 
-        //?를
+        //?를 paramValues의 개수만큼 ?,?,?...로 변경
         if (!sb.isEmpty()) sb.append(" ");
         sb.append(sqlPart.replace("?",
                 String.join(", ", Collections.nCopies(paramValues.length, "?"))));
@@ -39,22 +39,6 @@ public class Sql {
         return this;
     }
 
-
-    // IN절 지원: appendIn("id IN", List.of(1,2,3))
-    public Sql appendIn(String prefix, List<?> inParams) {
-        if (inParams == null || inParams.isEmpty()) {
-            sb.append(prefix).append(" (NULL)"); // 항상 false
-            return this;
-        }
-        sb.append(prefix).append(" (");
-        for (int i = 0; i < inParams.size(); i++) {
-            if (i > 0) sb.append(", ");
-            sb.append("?");
-            params.add(inParams.get(i));
-        }
-        sb.append(")");
-        return this;
-    }
 
     public String getSql() {
         return sb.toString();
@@ -275,7 +259,24 @@ public class Sql {
     }
 
     public List<Long> selectLongs() {
-        return List.of();
+        List<Long> results = new ArrayList<>();
+        try {
+            Connection conn = simpleDb.getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(getSql())) {
+                bindParams(ps);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Object value = rs.getObject(1);
+                        if (value instanceof Number num) {
+                            results.add(num.longValue());
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return results;
     }
 
     public Sql appendIn(String s, String 새_제목, String 새_내용) {

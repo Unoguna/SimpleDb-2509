@@ -2,6 +2,8 @@ package com.back;
 
 import lombok.Getter;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -125,8 +127,57 @@ public class Sql {
         return rows;
     }
 
-    public List<Article> selectRows(Class<Article> articleClass){
-        return null;
+    public <T> List<T> selectRows(Class<T> clazz) {
+        List<T> results = new ArrayList<>();
+
+        try {
+            Connection conn = simpleDb.getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(getSql())) {
+                bindParams(ps);
+                try (ResultSet rs = ps.executeQuery()) {
+                    ResultSetMetaData meta = rs.getMetaData();
+                    int columnCount = meta.getColumnCount();
+
+                    while (rs.next()) {
+                        //인스턴스 생성
+                        T obj = clazz.getDeclaredConstructor().newInstance();
+
+                        for (int i = 1; i <= columnCount; i++) {
+                            String columnName = meta.getColumnLabel(i);
+                            Object value = rs.getObject(i);
+
+                            if (value instanceof Timestamp ts) {
+                                value = ts.toLocalDateTime();
+                            }
+
+                            // 필드에 값 넣기 (setter 먼저 시도, 없으면 직접 필드 접근)
+                            String setterName = "set" + Character.toUpperCase(columnName.charAt(0)) + columnName.substring(1);
+
+                            try {
+                                // setter 있으면 실행
+                                Method setter = clazz.getMethod(setterName, value.getClass());
+                                setter.invoke(obj, value);
+                            } catch (NoSuchMethodException e) {
+                                // 없으면 필드 직접 접근
+                                try {
+                                    Field field = clazz.getDeclaredField(columnName);
+                                    field.setAccessible(true);
+                                    field.set(obj, value);
+                                } catch (NoSuchFieldException ignore) {
+                                    // 컬럼과 매칭되는 필드 없으면 무시
+                                }
+                            }
+                        }
+
+                        results.add(obj);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return results;
     }
 
     public Map<String, Object> selectRow() {
@@ -155,10 +206,11 @@ public class Sql {
         }
     }
 
-    public Article selectRow(Class<Article> articleClass){
-        return null;
+    public <T> T selectRow(Class<T> clazz) {
+        List<T> rows = selectRows(clazz);
+        if (rows.isEmpty()) return null; // 결과 없으면 null
+        return rows.getFirst();              // 있으면 첫 번째 행
     }
-
     public LocalDateTime selectDatetime() {
         try {
             Connection conn = simpleDb.getConnection();

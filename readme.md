@@ -87,6 +87,8 @@
 
 ### 🎈 SimpleDb 
 
+---
+
 ### 🚀 SQL 빌더
 #### 🔹`executeUpdate()`의 역할
 
@@ -116,3 +118,7 @@ PreparedStatement ps = conn.prepareStatement("SELECT id FROM article WHERE id=?"
 ps.setLong(1, 1);
 ResultSet rs = ps.executeQuery();
 ```
+
+---
+
+### 🎨 로깅/디버그

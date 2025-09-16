@@ -61,6 +61,28 @@
 > 모든 테스트가 green이어야 제출 요건 충족으로 간주합니다.
 
 ---
+## ✨ 새롭게 알게된 내용
+
+### ThreadLocal
+- [ThreadLocal](https://velog.io/@wkdrhrwjdgh/Java-ThreadLocal)
+
+### Connection 인터페이스
+
+### PreparedStatement
+
+### 가변인수
+
+### ResultSet, ResultSetMetaData
+
+### Class<T> clazz
+
+### Timestamp 클래스
+
+### Method 클래스
+
+### Field 클래스
+
+---
 ## ✏️ 세부 구현
 
 ### 🎈 SimpleDb 

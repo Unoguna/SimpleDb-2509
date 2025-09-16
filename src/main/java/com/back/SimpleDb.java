@@ -75,13 +75,34 @@ public class SimpleDb {
     }
 
     public void startTransaction() {
+        try {
+            Connection conn = getConnection();
+            conn.setAutoCommit(false); // 자동 커밋 해제
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void rollback() {
+        try {
+            Connection conn = getConnection();
+            conn.rollback();
+            conn.setAutoCommit(true); // 원래 상태로 돌려놓기
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void commit() {
+        try {
+            Connection conn = getConnection();
+            conn.commit();
+            conn.setAutoCommit(true); // 원래 상태로 돌려놓기
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
+
     // 스레드별 Connection 닫기
     public void close() {
         try {

@@ -51,7 +51,6 @@ public class Sql {
     public long insert() {
         try {
             Connection conn = simpleDb.getConnection();
-
             //RETURN_GENERATED_KEYS 옵션을 주면, INSERT 실행 후 DB가 생성한 AUTO_INCREMENT 값을 JDBC가 꺼낼 수 있게 된다.
             try (PreparedStatement ps = conn.prepareStatement(getSql(), Statement.RETURN_GENERATED_KEYS)) {
                 bindParams(ps);
@@ -329,10 +328,6 @@ public class Sql {
             throw new RuntimeException(e);
         }
         return results;
-    }
-
-    public Sql appendIn(String s, String 새_제목, String 새_내용) {
-        return null;
     }
 
 }

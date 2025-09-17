@@ -72,15 +72,7 @@
 
 ### 가변인수
 
-### ResultSet, ResultSetMetaData
-
 ### Class<T> clazz
-
-### Timestamp 클래스
-
-### Method 클래스
-
-### Field 클래스
 
 ---
 ## ✏️ 세부 구현

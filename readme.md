@@ -67,28 +67,63 @@
 - [ThreadLocal](https://velog.io/@wkdrhrwjdgh/Java-ThreadLocal)
 
 ### Connection 인터페이스
-
-### PreparedStatement
-
-### 가변인수
-
-### Class<T> clazz
+- [Connection](https://velog.io/@wkdrhrwjdgh/Java-Connection-%EC%9D%B8%ED%84%B0%ED%8E%98%EC%9D%B4%EC%8A%A4)
 
 ---
 ## ✏️ 세부 구현
 
 ### 🎈 SimpleDb 
 
+#### `Connection getConnection()`
+
+- `ThreadLocal`에서 현재 스레드의 Connection을 가져온다.
+
+- 없거나 닫혀 있으면 `DriverManager.getConnection(...)`으로 새로 생성해 `ThreadLocal`에 저장.
+
+- 같은 스레드에서 여러 번 호출하면 동일한 Connection을 재사용한다.
+
+#### `Sql genSql()`
+
+- `Sql` 빌더(별도 클래스)를 생성하여 SQL을 조립하고 실행할 수 있게 한다.
+
+#### `void run(String sql, Object... params)`
+
+- `PreparedStatement` 기반으로 쿼리 실행 (INSERT/UPDATE/DELETE/DDL 등).
+
+- `Object... params`를 받아 `?`에 순서대로 바인딩.
+
+- 가변 인자이므로 파라미터를 넘기지 않아도 동작.
+
+#### **트랜잭션**
+
+- `startTransaction()` : conn.setAutoCommit(false) — 트랜잭션 시작
+
+- `commit()` : conn.commit() 및 conn.setAutoCommit(true) — 정상종료
+
+- `rollback()` : conn.rollback() 및 conn.setAutoCommit(true) — 취소
+
+#### `close()`
+
+- 현재 스레드에 저장된 `Connection`을 닫고 `ThreadLocal`에서 제거합니다.
+
+- 커넥션 누수 방지.
+
 ---
 
 ### 🚀 SQL 빌더
-#### 🔹`executeUpdate()`의 역할
+
+#### `append(String sqlPart, Object... paramValues)`, `appendIn(String sqlPart, Object... paramValues)`
+
+- StringBuilder을 통해 sql문 작성.
+  
+- `Object... paramValues`을 이용해 `?` 바인딩.
+
+#### `executeUpdate()`
 
 - **INSERT / UPDATE / DELETE / DDL**(CREATE, DROP, TRUNCATE…) 같이 👉 **결과가 “변경된 행 수”로 나타나는 쿼리**를 실행할 때 사용.
 
 - 리턴값: `int` → 변경된 row 수
 
-예시:
 ```java
 PreparedStatement ps = conn.prepareStatement("UPDATE article SET title=? WHERE id=?");
 ps.setString(1, "새 제목");
@@ -98,13 +133,12 @@ int updatedRows = ps.executeUpdate();
 
 ➡️ `updatedRows` = 수정된 행 수
 
-#### 🔹 `executeQuery()`의 역할
+#### `executeQuery()`
 
 - **SELECT** 같이 👉 **결과가 ResultSet으로 나오는 쿼리** 실행할 때 사용.
 
 - 리턴값: `ResultSet`
 
-예시:
 ```java
 PreparedStatement ps = conn.prepareStatement("SELECT id FROM article WHERE id=?");
 ps.setLong(1, 1);
@@ -114,3 +148,24 @@ ResultSet rs = ps.executeQuery();
 ---
 
 ### 🎨 로깅/디버그
+
+-`getSql()`메서드를 사용할 때마다 로그 출력
+
+```java
+    public String getSql() {
+        if (simpleDb.isDevMode()) {
+            logDebugSql();
+        }
+        return sb.toString();
+    }
+
+    private void logDebugSql() {
+        System.out.println("\n== Log ==");
+        System.out.println("== Raw SQL ==");
+        System.out.println(sb.toString());
+        System.out.println("== Params ==");
+        for (int i = 0; i < params.size(); i++) {
+            System.out.printf("[%d] %s%n", i + 1, params.get(i));
+        }
+    }
+```

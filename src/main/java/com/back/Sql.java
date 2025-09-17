@@ -43,9 +43,21 @@ public class Sql {
 
 
     public String getSql() {
+        if (simpleDb.isDevMode()) {
+            logDebugSql();
+        }
         return sb.toString();
     }
 
+    private void logDebugSql() {
+        System.out.println("\n== Log ==");
+        System.out.println("== Raw SQL ==");
+        System.out.println(sb.toString());
+        System.out.println("== Params ==");
+        for (int i = 0; i < params.size(); i++) {
+            System.out.printf("[%d] %s%n", i + 1, params.get(i));
+        }
+    }
 
     // INSERT 실행 → 생성된 PK 반환
     public long insert() {
@@ -167,7 +179,6 @@ public class Sql {
                                 }
                             }
                         }
-
                         results.add(obj);
                     }
                 }

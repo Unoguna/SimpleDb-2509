@@ -1,5 +1,6 @@
 package com.back;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
@@ -12,7 +13,7 @@ public class SimpleDb {
     private String username;
     private String password;
     private String dbName;
-
+    @Getter
     private boolean devMode;
 
     // 스레드별 Connection 관리
